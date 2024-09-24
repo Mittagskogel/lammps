@@ -32,6 +32,13 @@
 
 using namespace LAMMPS_NS;
 
+// Enzyme
+#include "enzyme/fprt/fprt.h"
+#define FROM 64
+#define TO 8
+template <typename fty> fty *__enzyme_truncate_mem_func(fty *, int, int);
+template <typename fty> fty *__enzyme_truncate_op_func(fty *, int, int, int);
+
 // for convenience
 static void finalize()
 {
@@ -42,6 +49,37 @@ static void finalize()
 /* ----------------------------------------------------------------------
    main program to drive LAMMPS
 ------------------------------------------------------------------------- */
+
+void main_enzyme(int argc, char **argv, MPI_Comm lammps_comm) {
+  try {
+    auto lammps = new LAMMPS(argc, argv, lammps_comm);
+    lammps->input->file();
+    delete lammps;
+  } catch (LAMMPSAbortException &ae) {
+    finalize();
+    MPI_Abort(ae.get_universe(), 1);
+  } catch (LAMMPSException &) {
+    finalize();
+    MPI_Barrier(lammps_comm);
+    MPI_Finalize();
+    exit(1);
+  } catch (fmt::format_error &fe) {
+    fprintf(stderr, "fmt::format_error: %s\n", fe.what());
+    finalize();
+    MPI_Abort(MPI_COMM_WORLD, 1);
+    exit(1);
+  } catch (std::bad_alloc &ae) {
+    fprintf(stderr, "C++ memory allocation failed: %s\n", ae.what());
+    finalize();
+    MPI_Abort(MPI_COMM_WORLD, 1);
+    exit(1);
+  } catch (std::exception &e) {
+    fprintf(stderr, "Exception: %s\n", e.what());
+    finalize();
+    MPI_Abort(MPI_COMM_WORLD, 1);
+    exit(1);
+  }    
+}
 
 int main(int argc, char **argv)
 {
@@ -73,34 +111,7 @@ int main(int argc, char **argv)
   feenableexcept(FE_OVERFLOW);
 #endif
 
-  try {
-    auto lammps = new LAMMPS(argc, argv, lammps_comm);
-    lammps->input->file();
-    delete lammps;
-  } catch (LAMMPSAbortException &ae) {
-    finalize();
-    MPI_Abort(ae.get_universe(), 1);
-  } catch (LAMMPSException &) {
-    finalize();
-    MPI_Barrier(lammps_comm);
-    MPI_Finalize();
-    exit(1);
-  } catch (fmt::format_error &fe) {
-    fprintf(stderr, "fmt::format_error: %s\n", fe.what());
-    finalize();
-    MPI_Abort(MPI_COMM_WORLD, 1);
-    exit(1);
-  } catch (std::bad_alloc &ae) {
-    fprintf(stderr, "C++ memory allocation failed: %s\n", ae.what());
-    finalize();
-    MPI_Abort(MPI_COMM_WORLD, 1);
-    exit(1);
-  } catch (std::exception &e) {
-    fprintf(stderr, "Exception: %s\n", e.what());
-    finalize();
-    MPI_Abort(MPI_COMM_WORLD, 1);
-    exit(1);
-  }
+  __enzyme_truncate_op_func(main_enzyme, FROM, 0, TO)(argc, argv, lammps_comm);
   finalize();
   MPI_Barrier(lammps_comm);
   MPI_Finalize();

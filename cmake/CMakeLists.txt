@@ -249,6 +249,24 @@ if(PKG_PLUGIN AND (NOT ((CMAKE_SYSTEM_NAME STREQUAL "Windows"))))
 endif()
 install(TARGETS lmp EXPORT LAMMPS_Targets DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+# Enzyme MPFR GMP
+find_package(PkgConfig)
+pkg_check_modules(MPFR REQUIRED mpfr gmp)
+
+# Enzyme LLD
+find_package(Enzyme REQUIRED CONFIG)
+get_property(importTargetsAfter DIRECTORY "${CMAKE_SOURCE_DIR}" PROPERTY IMPORTED_TARGETS)
+
+# Enzyme
+target_compile_definitions(lammps PUBLIC -DNOVERSION)
+target_compile_options(lammps PUBLIC "-include" "enzyme/fprt/mpfr.h")
+target_include_directories(lammps PUBLIC ${MPFR_INCLUDE_DIRS} "/scratch/fhrold/riken/Enzyme/enzyme/include")
+target_link_libraries(lammps PUBLIC LLDEnzymeFlags ${MPFR_LINK_LIBARIES})
+target_compile_definitions(lmp PUBLIC -DNOVERSION)
+target_compile_options(lmp PUBLIC "-include" "enzyme/fprt/mpfr.h")
+target_include_directories(lmp PUBLIC ${MPFR_INCLUDE_DIRS} "/scratch/fhrold/riken/Enzyme/enzyme/include")
+target_link_libraries(lmp PUBLIC LLDEnzymeFlags ${MPFR_LINK_LIBARIES})
+
 option(CMAKE_VERBOSE_MAKEFILE "Generate verbose Makefiles" OFF)
 
 set(STANDARD_PACKAGES
