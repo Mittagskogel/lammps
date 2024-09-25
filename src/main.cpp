@@ -34,7 +34,7 @@ using namespace LAMMPS_NS;
 
 // Enzyme
 #include "enzyme/fprt/fprt.h"
-#define FROM 64
+#define FROM 16
 #define TO 8
 template <typename fty> fty *__enzyme_truncate_mem_func(fty *, int, int);
 template <typename fty> fty *__enzyme_truncate_op_func(fty *, int, int, int);

@@ -241,13 +241,6 @@ if(BUILD_SHARED_LIBS AND (CMAKE_SYSTEM_NAME STREQUAL "Windows") AND CMAKE_CROSSC
 endif()
 
 add_executable(lmp ${MAIN_SOURCES})
-target_link_libraries(lmp PRIVATE lammps)
-set_target_properties(lmp PROPERTIES OUTPUT_NAME ${LAMMPS_BINARY})
-# re-export all symbols for plugins
-if(PKG_PLUGIN AND (NOT ((CMAKE_SYSTEM_NAME STREQUAL "Windows"))))
-  set_target_properties(lmp PROPERTIES ENABLE_EXPORTS TRUE)
-endif()
-install(TARGETS lmp EXPORT LAMMPS_Targets DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Enzyme MPFR GMP
 find_package(PkgConfig)
@@ -266,6 +259,14 @@ target_compile_definitions(lmp PUBLIC -DNOVERSION)
 target_compile_options(lmp PUBLIC "-include" "enzyme/fprt/mpfr.h")
 target_include_directories(lmp PUBLIC ${MPFR_INCLUDE_DIRS} "/scratch/fhrold/riken/Enzyme/enzyme/include")
 target_link_libraries(lmp PUBLIC LLDEnzymeFlags ${MPFR_LINK_LIBARIES})
+
+target_link_libraries(lmp PRIVATE lammps ${MPFR_LINK_LIBRARIES})
+set_target_properties(lmp PROPERTIES OUTPUT_NAME ${LAMMPS_BINARY})
+# re-export all symbols for plugins
+if(PKG_PLUGIN AND (NOT ((CMAKE_SYSTEM_NAME STREQUAL "Windows"))))
+  set_target_properties(lmp PROPERTIES ENABLE_EXPORTS TRUE)
+endif()
+install(TARGETS lmp EXPORT LAMMPS_Targets DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 option(CMAKE_VERBOSE_MAKEFILE "Generate verbose Makefiles" OFF)
 
